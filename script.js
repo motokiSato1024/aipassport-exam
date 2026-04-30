@@ -246,6 +246,7 @@ function shuffleChoices(q){
 function startReview(ch){
  state.chapter=ch;
  state.index=0;
+ state.score=0;  // スコアをリセット
  state.mode="review";
  state.answerHistory = [];  // 回答履歴をリセット
  state.answerResults = [];  // 回答結果をリセット
@@ -365,9 +366,22 @@ function next(){
     if(previousResult && !isCorrect){
       // 正解→不正解に変更
       state.score--;
+      
+      // 復習モードでprogressを減らす
+      if(state.mode === "review"){
+        state.progress[state.chapter] = Math.max(0, (state.progress[state.chapter] || 0) - 1);
+      }
     } else if(!previousResult && isCorrect){
       // 不正解→正解に変更
       state.score++;
+      
+      // 復習モードでprogressを増やす
+      if(state.mode === "review"){
+        state.progress[state.chapter] = (state.progress[state.chapter] || 0) + 1;
+        if(state.progress[state.chapter] > questions[state.chapter].length){
+          state.progress[state.chapter] = questions[state.chapter].length;
+        }
+      }
     }
   } else {
     // 初回回答
@@ -406,6 +420,41 @@ function next(){
         }
       });
     }
+    
+    // 復習モードでも間違えた問題を記録
+    if(state.mode === "review"){
+      // 復習で間違えた問題を元の間違いリストに追加（重複なし）
+      list.forEach((q, i) => {
+        if(state.answerResults[i] === false){
+          // 不正解だった問題は間違いリストに保持（重複なし）
+          const exists = state.wrong[state.chapter].some(wq => wq.q === q.q);
+          if(!exists){
+            state.wrong[state.chapter].push(q);
+          }
+        } else if(state.answerResults[i] === true){
+          // 正解した問題のみ間違いリストから削除
+          state.wrong[state.chapter] = state.wrong[state.chapter].filter(wq => wq.q !== q.q);
+        }
+        // answerResults[i] === undefined の場合は何もしない（未回答なのでリストに残す）
+      });
+    }
+    
+    if(state.mode === "allReview"){
+      // 全体復習で間違えた問題を記録
+      list.forEach((q, i) => {
+        if(state.answerResults[i] === false){
+          // 不正解だった問題は間違いリストに保持（重複なし）
+          const exists = state.allWrong.some(wq => wq.q === q.q);
+          if(!exists){
+            state.allWrong.push(q);
+          }
+        } else if(state.answerResults[i] === true){
+          // 正解した問題のみ間違いリストから削除
+          state.allWrong = state.allWrong.filter(wq => wq.q !== q.q);
+        }
+        // answerResults[i] === undefined の場合は何もしない（未回答なのでリストに残す）
+      });
+    }
 
     // クイズ終了時に所要時間を記録
     if(state.startTime && (state.mode === "normal" || state.mode === "all")){
@@ -420,6 +469,11 @@ function next(){
 
     if(state.mode==="normal"){
       state.progress[state.chapter]=state.score;
+      
+      // normalモードで満点の場合、progressを問題数に設定
+      if(state.score === questions[state.chapter].length){
+        state.progress[state.chapter] = questions[state.chapter].length;
+      }
     }
 
    let total;
@@ -428,12 +482,6 @@ function next(){
    } else {
      total = questions[state.chapter].length;
    }
-
-if(state.score === total){
-  if(state.mode !== "all"){
-    state.progress[state.chapter] = total;
-  }
-}
 
      if(state.mode==="all" || state.mode === "allReview"){
     state.allProgress = state.score;
@@ -518,6 +566,9 @@ function closeModal(){
 }
 
 function goHome(){
+ // クイズ途中でも進捗を保存（特に復習モード対応）
+ saveData();
+ 
  document.getElementById("homeView").classList.remove("hidden");
  document.getElementById("quizView").classList.add("hidden");
  document.getElementById("chapterView").classList.add("hidden");
@@ -559,6 +610,39 @@ function loadRoundData(round){
   state.allWrong = JSON.parse(localStorage.getItem(`allWrong_${round}`)) || [];
   state.firstClearShown = JSON.parse(localStorage.getItem(`firstClearShown_${round}`)) || false;
   state.times = JSON.parse(localStorage.getItem(`times_${round}`)) || {};  // 時間情報を読み込み
+}
+
+// 現在のラウンドのデータをリセット
+function resetCurrentRoundData(){
+  const roundName = currentRound === "round1" ? "第一回" : 
+                    currentRound === "round2" ? "第二回" : "第三回";
+  
+  if(!confirm(`${roundName}の全ての進捗データをリセットしますか？\n\nこの操作は取り消せません。`)){
+    return;
+  }
+  
+  // localStorageから現在のラウンドのデータを削除
+  localStorage.removeItem(`progress_${currentRound}`);
+  localStorage.removeItem(`wrong_${currentRound}`);
+  localStorage.removeItem(`allProgress_${currentRound}`);
+  localStorage.removeItem(`allWrong_${currentRound}`);
+  localStorage.removeItem(`firstClearShown_${currentRound}`);
+  localStorage.removeItem(`times_${currentRound}`);
+  
+  // stateをリセット
+  state.progress = {};
+  state.wrong = {};
+  state.allProgress = 0;
+  state.allWrong = [];
+  state.firstClearShown = false;
+  state.times = {};
+  state.answerHistory = [];
+  state.answerResults = [];
+  
+  // 画面を更新
+  renderHome();
+  
+  alert(`${roundName}のデータをリセットしました。`);
 }
 
 document.addEventListener("DOMContentLoaded", async ()=>{
