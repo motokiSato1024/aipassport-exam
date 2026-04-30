@@ -172,7 +172,10 @@ function startAll(){
  state.index = 0;
  state.score = 0;
  state.mode = "all";
- state.allWrong = [];
+ // 間違えた問題を保持（初期化のみ）
+ if(!state.allWrong){
+   state.allWrong = [];
+ }
  state.startTime = Date.now();  // タイマー開始
 
  // 全問題＋選択肢ランダム
@@ -189,7 +192,10 @@ function start(ch){
  state.chapter=ch;
  state.index=0;
  state.score=0;
- state.wrong[ch]=[];
+ // 間違えた問題を保持（初期化のみ）
+ if(!state.wrong[ch]){
+   state.wrong[ch] = [];
+ }
  state.mode="normal";
  state.startTime = Date.now();  // タイマー開始
 
