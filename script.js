@@ -66,7 +66,9 @@ let state={
  allProgress: 0,
  firstClearShown: false,
  times: {},  // 各章の最速タイム（ミリ秒）
- startTime: null  // クイズ開始時刻
+ startTime: null,  // クイズ開始時刻
+ answerHistory: [],  // 各問題での選択回答履歴
+ answerResults: []   // 各問題の正解/不正解記録（true=正解, false=不正解）
 };
 
 
@@ -172,6 +174,8 @@ function startAll(){
  state.index = 0;
  state.score = 0;
  state.mode = "all";
+ state.answerHistory = [];  // 回答履歴をリセット
+ state.answerResults = [];  // 回答結果をリセット
  // 間違えた問題を保持（初期化のみ）
  if(!state.allWrong){
    state.allWrong = [];
@@ -192,6 +196,8 @@ function start(ch){
  state.chapter=ch;
  state.index=0;
  state.score=0;
+ state.answerHistory = [];  // 回答履歴をリセット
+ state.answerResults = [];  // 回答結果をリセット
  // 間違えた問題を保持（初期化のみ）
  if(!state.wrong[ch]){
    state.wrong[ch] = [];
@@ -241,6 +247,8 @@ function startReview(ch){
  state.chapter=ch;
  state.index=0;
  state.mode="review";
+ state.answerHistory = [];  // 回答履歴をリセット
+ state.answerResults = [];  // 回答結果をリセット
  state.startTime = null;  // 復習モードではタイマーをリセット
 
  if(!state.wrong[ch]||state.wrong[ch].length===0){
@@ -268,6 +276,8 @@ function startAllReview(e){
   state.index = 0;
   state.score = 0;
   state.mode = "allReview";
+  state.answerHistory = [];  // 回答履歴をリセット
+  state.answerResults = [];  // 回答結果をリセット
   state.startTime = null;  // 復習モードではタイマーをリセット
 
   state.currentList = shuffle(
@@ -304,14 +314,27 @@ function load(){
 
  const box=document.getElementById("answers");
  box.innerHTML="";
- state.selected=null;
+ 
+ // 前の回答を復元
+ const previousAnswer = state.answerHistory[state.index];
+ state.selected = previousAnswer !== undefined ? previousAnswer : null;
 
  q.choices.forEach((c,i)=>{
    const d=document.createElement("div");
    d.innerText=c;
    d.onclick=()=>select(i,d);
+   // 前回選択した回答をハイライト
+   if(i === previousAnswer){
+     d.classList.add("selected");
+   }
    box.appendChild(d);
  });
+ 
+ // 戻るボタンの有効/無効を設定
+ const prevBtn = document.getElementById("prevBtn");
+ if(prevBtn){
+   prevBtn.disabled = state.index === 0;
+ }
 }
 //選択肢選ぶと呼ばれる関数
 function select(i,el){
@@ -327,30 +350,62 @@ function next(){
   const list=getList();
   const q=list[state.index];
 
+  // 前の回答と結果を取得
+  const previousAnswer = state.answerHistory[state.index];
+  const previousResult = state.answerResults[state.index];
+  const isCorrect = (state.selected === q.a);
   
-  if(state.selected===q.a){
-    state.score++;
+  // 回答を履歴に保存
+  state.answerHistory[state.index] = state.selected;
+  state.answerResults[state.index] = isCorrect;
+  
+  // スコアを調整
+  if(previousResult !== undefined){
+    // 既に回答済み - 結果が変わった場合のみスコアを調整
+    if(previousResult && !isCorrect){
+      // 正解→不正解に変更
+      state.score--;
+    } else if(!previousResult && isCorrect){
+      // 不正解→正解に変更
+      state.score++;
+    }
+  } else {
+    // 初回回答
+    if(isCorrect){
+      state.score++;
 
-    if(state.mode==="review"){
-      state.progress[state.chapter] = (state.progress[state.chapter] || 0) + 1;
+      if(state.mode==="review"){
+        state.progress[state.chapter] = (state.progress[state.chapter] || 0) + 1;
 
-      if(state.progress[state.chapter] > questions[state.chapter].length){
-        state.progress[state.chapter] = questions[state.chapter].length;
+        if(state.progress[state.chapter] > questions[state.chapter].length){
+          state.progress[state.chapter] = questions[state.chapter].length;
+        }
       }
     }
-
-  }else{
-   if(state.mode==="normal"){
-    state.wrong[state.chapter].push(q);
-   }
-   if(state.mode==="all"){
-    state.allWrong.push(q);
-   }
   }
 
   state.index++;
 
   if(state.index>=list.length){
+
+    // クイズ終了時に間違えた問題を記録
+    if(state.mode === "normal"){
+      state.wrong[state.chapter] = [];  // リセット
+      list.forEach((q, i) => {
+        if(state.answerResults[i] === false){
+          state.wrong[state.chapter].push(q);
+        }
+      });
+    }
+    
+    if(state.mode === "all"){
+      state.allWrong = [];  // リセット
+      list.forEach((q, i) => {
+        if(state.answerResults[i] === false){
+          state.allWrong.push(q);
+        }
+      });
+    }
 
     // クイズ終了時に所要時間を記録
     if(state.startTime && (state.mode === "normal" || state.mode === "all")){
@@ -411,6 +466,14 @@ if(state.score === total){
   }else{
     load();
   }
+}
+
+// 前の問題に戻る関数
+function previous(){
+  if(state.index === 0) return;  // 最初の問題の場合は戻れない
+  
+  state.index--;
+  load();
 }
 
 function openChapter(ch){
