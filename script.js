@@ -64,7 +64,9 @@ let state={
  mode:"normal",
  currentList:[],
  allProgress: 0,
- firstClearShown: false
+ firstClearShown: false,
+ times: {},  // 各章の最速タイム（ミリ秒）
+ startTime: null  // クイズ開始時刻
 };
 
 
@@ -116,7 +118,9 @@ function renderHome(){
  const isChecked = isAll 
   ? (state.allProgress === total)
   : (state.progress[ch] || 0) === questions[ch].length;
-   const div = document.createElement("div");
+  // 所要時間を取得
+  const timeMs = state.times[ch];
+  const timeStr = timeMs ? formatTime(timeMs) : "";   const div = document.createElement("div");
    div.className = "lesson";
 
   div.innerHTML = `
@@ -125,7 +129,10 @@ function renderHome(){
     ${isChecked ? "checked" : ""} disabled>
 
   <div style="flex:1">
-    <strong>${ch}</strong>
+    <div style="display:flex;align-items:center;gap:8px">
+      <strong>${ch}</strong>
+      ${timeStr ? `<span style="font-size:0.85em;color:#666;">(${timeStr})</span>` : ""}
+    </div>
     <div class="progress-bar">
       <div class="progress-fill" style="width:${percent}%"></div>
     </div>
@@ -165,7 +172,11 @@ function startAll(){
  state.index = 0;
  state.score = 0;
  state.mode = "all";
- state.allWrong = [];
+ // 間違えた問題を保持（初期化のみ）
+ if(!state.allWrong){
+   state.allWrong = [];
+ }
+ state.startTime = Date.now();  // タイマー開始
 
  // 全問題＋選択肢ランダム
  state.currentList = shuffle(
@@ -181,8 +192,12 @@ function start(ch){
  state.chapter=ch;
  state.index=0;
  state.score=0;
- state.wrong[ch]=[];
+ // 間違えた問題を保持（初期化のみ）
+ if(!state.wrong[ch]){
+   state.wrong[ch] = [];
+ }
  state.mode="normal";
+ state.startTime = Date.now();  // タイマー開始
 
  state.currentList = shuffle(
    questions[ch].map(q => shuffleChoices(q))
@@ -226,6 +241,7 @@ function startReview(ch){
  state.chapter=ch;
  state.index=0;
  state.mode="review";
+ state.startTime = null;  // 復習モードではタイマーをリセット
 
  if(!state.wrong[ch]||state.wrong[ch].length===0){
    alert("復習問題なし");
@@ -237,24 +253,6 @@ function startReview(ch){
  
  document.getElementById
     ("chapterView").classList.add("hidden");
- showQuiz();
-}
-
-function startAllReview(){
- if(!state.
-  wrongAll || state.wrongAll.length === 0){
-   alert("復習問題なし");
-   return;
- }
-
- state.chapter = "全体復習";
- state.index = 0;
- state.mode = "allReview";
-
- state.currentList = shuffle(
-   state.wrongAll.map(q => shuffleChoices(q))
- );
-
  showQuiz();
 }
 
@@ -270,6 +268,7 @@ function startAllReview(e){
   state.index = 0;
   state.score = 0;
   state.mode = "allReview";
+  state.startTime = null;  // 復習モードではタイマーをリセット
 
   state.currentList = shuffle(
     state.allWrong.map(q => shuffleChoices(q))
@@ -352,6 +351,17 @@ function next(){
   state.index++;
 
   if(state.index>=list.length){
+
+    // クイズ終了時に所要時間を記録
+    if(state.startTime && (state.mode === "normal" || state.mode === "all")){
+      const elapsedTime = Date.now() - state.startTime;
+      const chapter = state.chapter;
+      
+      // 最速タイムを更新（まだ記録がないか、より速い場合）
+      if(!state.times[chapter] || elapsedTime < state.times[chapter]){
+        state.times[chapter] = elapsedTime;
+      }
+    }
 
     if(state.mode==="normal"){
       state.progress[state.chapter]=state.score;
@@ -451,6 +461,19 @@ function goHome(){
  renderHome();
 }
 
+// ミリ秒を「○分○秒」形式に変換
+function formatTime(ms){
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  
+  if(minutes > 0){
+    return `${minutes}分${seconds}秒`;
+  } else {
+    return `${seconds}秒`;
+  }
+}
+
 function saveData(){
   saveRoundData(currentRound);
 }
@@ -462,6 +485,7 @@ function saveRoundData(round){
   localStorage.setItem(`allProgress_${round}`, JSON.stringify(state.allProgress));
   localStorage.setItem(`allWrong_${round}`, JSON.stringify(state.allWrong));
   localStorage.setItem(`firstClearShown_${round}`, JSON.stringify(state.firstClearShown));
+  localStorage.setItem(`times_${round}`, JSON.stringify(state.times));  // 時間情報を保存
 }
 
 // ラウンド固有のデータを読み込み
@@ -471,6 +495,7 @@ function loadRoundData(round){
   state.allProgress = JSON.parse(localStorage.getItem(`allProgress_${round}`)) || 0;
   state.allWrong = JSON.parse(localStorage.getItem(`allWrong_${round}`)) || [];
   state.firstClearShown = JSON.parse(localStorage.getItem(`firstClearShown_${round}`)) || false;
+  state.times = JSON.parse(localStorage.getItem(`times_${round}`)) || {};  // 時間情報を読み込み
 }
 
 document.addEventListener("DOMContentLoaded", async ()=>{
