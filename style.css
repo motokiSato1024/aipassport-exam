@@ -1,0 +1,253 @@
+/* Screen reader only - visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+body{
+    margin:0;
+    font-family:sans-serif;
+    background:#f5f7fb;
+    display:flex
+}
+
+
+
+.sidebar{
+    position:fixed;
+    top:0;
+    left:0px;
+    width:220px;
+    height:100vh;
+    background:linear-gradient(180deg,#3b82f6,#2563eb);
+    color:#fff;
+    padding:20px;
+}
+
+.main{
+    flex:1;
+    padding:40px 30px;
+    margin-left: 240px;
+    margin-top: -24px;
+}
+
+.lesson{
+    border:1px solid #E5E7EB;
+    border-radius:10px;
+    padding:15px;
+    display:flex;
+    align-items:flex-start;
+    background:#fff;
+    
+    position:relative;
+    overflow:hidden;
+    border-radius:12px;
+
+    transition:.2s;
+    cursor:pointer;
+}
+
+#lessonList{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr); /* 横2列 */
+  gap:12px;
+}
+
+/* 背景に進捗を入れる */
+.lesson::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  height:100%;
+  width:var(--progress);
+  background:linear-gradient(90deg,#3b82f6,#60a5fa);
+  opacity:0.15;
+}
+
+.lesson.completed::before{
+  background:linear-gradient(90deg,#22c55e,#4ade80);
+  opacity:0.2;
+}
+
+/* 中身を前面に */
+.lesson > *{
+  position:relative;
+  z-index:1;
+}
+
+.checkbox{
+  appearance:none;
+  -webkit-appearance:none;
+
+  width:18px;
+  height:18px;
+  border:2px solid #ccc;
+  border-radius:4px;
+
+  display:inline-block;
+  position:relative;
+}
+
+/* チェックされた時 */
+.checkbox:checked{
+  background:#22c55e;
+  border-color:#22c55e;
+}
+
+/* ✔マーク */
+.checkbox:checked::after{
+  content:"✔";
+  color:#fff;
+  font-size:12px;
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-60%);
+}
+
+
+.lesson:hover{
+  background:#f1f5ff;
+  transform:translateY(-2px);
+}
+
+#overallProgress .lesson{
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+}
+
+.progress-bar{
+    height:6px;
+    background:#e5e7eb;
+    border-radius:6px;
+    margin-top:8px;
+    width: 100%;
+    line-height: 0;
+    font-size: 0;
+}
+
+.progress-fill{
+    height:100%;
+    background:#2f6fec;
+    border-radius:6px;
+    display: block;
+}
+
+.btn.review-alert{
+  background:#ef4444;
+  color:#fff;
+  font-weight:bold;
+}
+
+#chapterView .btn{margin-bottom:20px;}
+
+.btn{background:#2f6fec;color:#fff;border:none;padding:8px 16px;border-radius:20px;cursor:pointer}
+
+.hidden{display:none}
+
+.answers div{padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0;cursor:pointer}
+.answers div:hover:not(.selected){
+    background:#d2d5d7
+}
+
+.selected{background:#93C5FD}
+
+.checkbox{transform:scale(1.2);cursor:pointer}
+
+#resultModal{z-index:9999;}
+
+/* ラウンド選択ボタン */
+.round-btn {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.round-btn:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateX(2px);
+}
+
+.round-btn.active {
+  background: #fff;
+  color: #2563eb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* サイドバースタイル */
+.sidebar-header {
+  margin-bottom: 30px;
+}
+
+.sidebar-title {
+  margin: 0 0 15px 0;
+  color: #fff;
+  font-size: 14px;
+}
+
+.sidebar-subtitle {
+  margin: 0;
+  color: rgba(255,255,255,0.9);
+  font-size: 13px;
+}
+
+.sidebar-section {
+  border-top: 1px solid rgba(255,255,255,0.3);
+  padding-top: 20px;
+}
+
+.sidebar-label {
+  margin: 0 0 10px 0;
+  color: rgba(255,255,255,0.8);
+  font-size: 12px;
+}
+
+/* チャプタービュー */
+.chapter-progress {
+  margin-top: 20px;
+}
+
+.chapter-buttons {
+  margin-top: 20px;
+}
+
+/* リザルトモーダル */
+.result-modal {
+  position: fixed;
+  display: none;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.result-modal.show {
+  display: flex;
+}
+
+.result-modal-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  text-align: center;
+}

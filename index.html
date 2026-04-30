@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIパスポート</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>  
+<!-- ローカル開発時は http://localhost:8000 などでサーバーを起動してください -->
+<input type="checkbox" class="checkbox" checked id="sidebarToggle">
+<label for="sidebarToggle" class="sr-only">サイドバー切り替え</label>
+
+<div class="left-trigger"></div>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h3 class="sidebar-title">生成AIパスポート試験対策</h3>
+    <p class="sidebar-subtitle">ToDoリスト</p>
+  </div>
+  
+  <div class="sidebar-section">
+    <p class="sidebar-label">テスト選択</p>
+    <button class="round-btn active" onclick="switchRound('round1')">第一回</button>
+    <button class="round-btn" onclick="switchRound('round2')">第二回</button>
+    <button class="round-btn" onclick="switchRound('round3')">第三回</button>
+  </div>
+</div>
+
+<div class="main">
+
+<div id="homeView">
+<h2>ホーム</h2>
+<div id="overallProgress"></div>
+<div id="lessonList"></div>
+
+</div>
+
+<div id="chapterView" class="hidden">
+  <button class="btn" onclick="goHome()">ホーム画面に戻る</button>
+
+  <h2 id="chapterTitle">第１章</h2>
+  <div id="chapterProgress" class="chapter-progress">
+  </div>
+
+  <div class="chapter-buttons">
+    <button class="btn start" onclick="start(state.chapter)">開始</button>
+    <button class="btn review" onclick="startReview(state.chapter)">復習</button>
+  </div>
+
+
+</div>
+
+<div id="quizView" class="hidden">
+  <button class="btn" onclick="goHome()">ホーム画面に戻る</button>
+  <h3 id="title"></h3>
+  <p id="question"></p>
+  <div id="answers" class="answers"></div>
+  <button class="btn" onclick="next()">次へ</button>
+  
+  
+  <div id="quizProgress">
+    <div class="progress-bar">
+      <div id="quizProgressFill" class="progress-fill"></div>
+    </div>
+    <small id="quizProgressText"></small>
+  </div>
+</div>
+
+</div>
+
+<!-- 合格モーダル -->
+<div id="resultModal" class="result-modal">
+
+ <div class="result-modal-content">
+   <h2>おめでとう！！合格！</h2>
+   <p>全章クリアしました！</p>
+   <button class="btn" onclick="closeModal()">閉じる</button>
+ </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
