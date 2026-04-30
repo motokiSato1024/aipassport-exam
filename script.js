@@ -24,16 +24,11 @@ async function switchRound(round) {
   buttons.forEach(btn => btn.classList.remove("active"));
   event.target.classList.add("active");
 
+  // 現在のラウンドの進捗を保存
+  saveRoundData(currentRound);
+
   // 現在のラウンドを更新
   currentRound = round;
-
-  // 進捗をリセット
-  state.progress = {};
-  state.wrong = {};
-  state.allProgress = 0;
-  state.allWrong = [];
-  state.firstClearShown = false;
-  localStorage.clear();
 
   // 新しい問題集を読み込む
   const questionFileName = `questions_${round}`;
@@ -46,6 +41,9 @@ async function switchRound(round) {
     buttons[0].classList.add("active");
     return;
   }
+
+  // 新しいラウンドの進捗を読み込む
+  loadRoundData(currentRound);
 
   // ホーム画面を再レンダリング
   goHome();
@@ -454,11 +452,25 @@ function goHome(){
 }
 
 function saveData(){
- localStorage.setItem("progress",JSON.stringify(state.progress));
- localStorage.setItem("wrong",JSON.stringify(state.wrong));
- localStorage.setItem("allProgress", JSON.stringify(state.allProgress));
- localStorage.setItem("allWrong", JSON.stringify(state.allWrong));
- localStorage.setItem("firstClearShown", JSON.stringify(state.firstClearShown));
+  saveRoundData(currentRound);
+}
+
+// ラウンド固有のデータを保存
+function saveRoundData(round){
+  localStorage.setItem(`progress_${round}`, JSON.stringify(state.progress));
+  localStorage.setItem(`wrong_${round}`, JSON.stringify(state.wrong));
+  localStorage.setItem(`allProgress_${round}`, JSON.stringify(state.allProgress));
+  localStorage.setItem(`allWrong_${round}`, JSON.stringify(state.allWrong));
+  localStorage.setItem(`firstClearShown_${round}`, JSON.stringify(state.firstClearShown));
+}
+
+// ラウンド固有のデータを読み込み
+function loadRoundData(round){
+  state.progress = JSON.parse(localStorage.getItem(`progress_${round}`)) || {};
+  state.wrong = JSON.parse(localStorage.getItem(`wrong_${round}`)) || {};
+  state.allProgress = JSON.parse(localStorage.getItem(`allProgress_${round}`)) || 0;
+  state.allWrong = JSON.parse(localStorage.getItem(`allWrong_${round}`)) || [];
+  state.firstClearShown = JSON.parse(localStorage.getItem(`firstClearShown_${round}`)) || false;
 }
 
 document.addEventListener("DOMContentLoaded", async ()=>{
@@ -470,12 +482,8 @@ document.addEventListener("DOMContentLoaded", async ()=>{
    return;
  }
 
- // ローカルストレージから状態を復元
- state.progress=JSON.parse(localStorage.getItem("progress"))||{};
- state.wrong=JSON.parse(localStorage.getItem("wrong"))||{};
- state.allProgress = JSON.parse(localStorage.getItem("allProgress")) || 0;
- state.allWrong = JSON.parse(localStorage.getItem("allWrong")) || [];
- state.firstClearShown = JSON.parse(localStorage.getItem("firstClearShown")) || false;
+ // ローカルストレージから現在のラウンドの状態を復元
+ loadRoundData(currentRound);
  
  renderHome();
 });
