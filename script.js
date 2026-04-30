@@ -615,7 +615,8 @@ function loadRoundData(round){
 // 現在のラウンドのデータをリセット
 function resetCurrentRoundData(){
   const roundName = currentRound === "round1" ? "第一回" : 
-                    currentRound === "round2" ? "第二回" : "第三回";
+                    currentRound === "round2" ? "第二回" : 
+                    currentRound === "round3" ? "第三回" : "第四回";
   
   if(!confirm(`${roundName}の全ての進捗データをリセットしますか？\n\nこの操作は取り消せません。`)){
     return;
